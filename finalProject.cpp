@@ -13,20 +13,21 @@ struct Book {
 };
 // void menuStudent();
 //NOTE: ADMIN
-void menuAdmin(FILE *file, char *path ,Book *book, int numberBooks, int &totalBooks, char search[30], char id_delete[]);
+void menuAdmin(FILE *file, char *path ,Book *book, int numberBooks, int &totalBooks, char search[30], char id_delete[], char search_type[], char id_edit[]);
 void enter(Book *book);
-void enterBooks(Book *book, int &numberBooks);
+void enterBooks(Book *&book, int &numberBooks);
 void printBooks(Book *book, int numberBooks);
 void searchAuthor(char search[30]);
-void addBook(Book *book, int numberBooks, const Book output);
+void addBook(Book *&book, int numberBooks, const Book output);
 Book *findBooksbyAuthor(Book *book, int numberBooks, int &totalBooks, char search[]);
 int countBooksByAuthor(Book *input, int numberBooks, char search[30]);
 void arrangeBookByYear(Book *book, int numberBooks);
 void arrangeBookByLetter(Book *book, int numberBooks);
 void deleteBook(Book *book, int &numberBooks, char id_delete[]);
 void exportBook(FILE *file, char *path, Book *book, int numberBooks);
-//NOTE: STUDENT
-void menuStudent(Book *book, int numberBooks, int &totalBooks,char search[]);
+int countBooks_Type(Book *book, int numberBooks, char search_type[30]);
+void printTypeBooks(Book *book, int numberBooks, char search_type[30]);
+void editBook(Book *book, int numberBooks, char id_edit[30]);
 //NOTE: Standard string input
 void standardInput(char *string);
 void delete_space(char string[30], int delete_position);
@@ -41,6 +42,8 @@ int main(){
     char search[30];
     int totalBooks = 0;
     char id_delete[30];
+    char search_type[30];
+    char id_edit[30];
     //The return string has the following format: Www Mmm dd hh: mm: ss where Www is the day of the week, Mmm is the characters for the month, dd is the day of the month, hh: mm: ss is the time, and yyyy is the year. .
     time_t curtime;
     time(&curtime);
@@ -49,12 +52,11 @@ int main(){
         exit(0);
     }
     printf("-----------------WELCOME TO LIBRARY-----------------");
-    printf("\nAre you student or admin ?");
+    printf("\nAre you admin ?");
     int choice;
     char pass[6];
-        printf("\n1. Admin.");
-        printf("\n2. Student.");
-        printf("\n3. Exit by click something");
+        printf("\n1. Yes I am Admin (click 1).");
+        printf("\n2. No (click something).");
         printf("\n----------------------------------------------------");
         printf("\nYour choice: ");
         scanf("%d", &choice);
@@ -77,21 +79,15 @@ int main(){
             if(strcmp(pass,password) == 0){
                 printf("\nLOGIN TIME: %s", ctime(&curtime));
                 printf("\nHello ADMIN\nWhat do you want ?");
-                menuAdmin(file,path,book,numberBooks,totalBooks,search,id_delete);
+                menuAdmin(file,path,book,numberBooks,totalBooks,search,id_delete,search_type,id_edit);
             } else {
+                printf("\n----------------------------------------------------");
+                printf("\nGood bye.");
                 exit(0);
             }
-        } else if (choice == 2) {
-            printf("\n----------------------------------------------------");
-            printf("\nLOGIN TIME: %s", ctime(&curtime));
-            printf("\nHello STUDENT\nWhat do you want ?");
-            menuStudent(book,numberBooks,totalBooks,search);
-        } else {
-            printf("\n----------------------------------------------------");
-            printf("\nGood bye.");
-        }
     free(book);
     return 0;
+    }
 }
 //NOTE: Standard String  input
 void standardInput(char *string){
@@ -135,16 +131,19 @@ void upperCase(char *string){
     //luon thuc hien viet hoa phan tu name[0]
 }
 //NOTE: ADMIN
-void menuAdmin(FILE *file, char *path ,Book *book, int numberBooks, int &totalBooks, char search[30], char id_delete[]){
+void menuAdmin(FILE *file, char *path ,Book *book, int numberBooks, int &totalBooks, char search[30], char id_delete[], char search_type[], char id_edit[])
+{
     char choice_admin;
         do{
             printf("\n--------------------------MENU-----------------------\n");
             printf("1. Enter and print book\n");
             printf("2. Find books according to author.\n");
             printf("3. Arrange book according to year or letter (A->Z).\n");
-            printf("4. Add new book or delete book.\n");
+            printf("4. Delete book.\n");
             printf("5. Print books.\n");
-            printf("6. Exit by click ESC\n");
+            printf("6. Count the type of book which you want to search.\n");
+            printf("7. Update book.\n");
+            printf("8. Exit by click ESC\n");
             printf("-----------------------------------------------------\n");
             printf("Your choise: ");
             fflush(stdin);
@@ -191,6 +190,23 @@ void menuAdmin(FILE *file, char *path ,Book *book, int numberBooks, int &totalBo
                     exportBook(file,path,book,numberBooks);
                     break;
                 }
+                case 54: 
+                {
+                    countBooks_Type(book, numberBooks,search_type);
+                    printTypeBooks(book, numberBooks,search_type);
+                    break;
+                }
+                case 55: 
+                {
+                    editBook(book, numberBooks,id_edit);
+                    printBooks(book, numberBooks);
+                    break;
+                }
+                case 27: 
+                {
+                    printf("\nGOOD BYE\n");
+                    break;
+                }
                 default:
                 {
                     printf("\nChoice is non-valid.\n");
@@ -214,9 +230,9 @@ void enter(Book *book){
     printf("year_publish: ");
     scanf("%d",&book->year_published);
 }
-void enterBooks(Book *book, int &numberBooks){
+void enterBooks(Book *&book, int &numberBooks){
     do{
-        printf("Enter the amount of book: ");
+        printf("\nEnter the amount of book: ");
         scanf("%d",&numberBooks);
         if(numberBooks <0){
             printf("\nPlease enter again.");
@@ -235,7 +251,7 @@ void printBooks(Book *book, int numberBooks){
         printf("\n00%d||%s\t\t||%s\t\t||%s\t\t||%s\t\t||%d", i+1, (book+i)->id_book, (book+i)->name_book, (book+i)->type_book, (book+i)->name_author, (book+i)->year_published);
     }
 }
-void addBook(Book *book, int numberBooks, const Book output){
+void addBook(Book *&book, int numberBooks, const Book output){
         numberBooks++;
         book = (Book *) realloc(book,numberBooks*sizeof(Book));
         *(book+numberBooks-1) = output;
@@ -248,7 +264,7 @@ Book *findBooksbyAuthor(Book *book, int numberBooks, int &totalBooks, char searc
     for(int i=0;i<numberBooks; i++){
         if(strcmp((book+i)->name_author, search )== 0){
             temp = *(book+i);
-            addBook(result, totalBooks, temp);
+            addBook(result,totalBooks,temp);
         }
     }
     return result;
@@ -321,53 +337,58 @@ void exportBook(FILE *file, char *path, Book *book, int numberBooks)
     }
     fclose(file);
 }
-//---------------------------------------------------------------------------
-//NOTE: STUDENT 
-void menuStudent(Book *book, int numberBooks, int &totalBooks,char search[]){
-    char choice_student;
-        do{
-            printf("\n------------------------Menu--------------------\n");
-            printf("1. Watching books in library\n");
-            printf("2. Find books according to author.\n");
-            printf("3. Arrange book according to year or letter (A->Z).\n");
-            printf("4. Exit by click ESC\n");
-            printf("-------------------------------------------------\n");
+int countBooks_Type(Book *book, int numberBooks, char search_type[30]){
+    int count = 0;
+    for(int i=0; i < numberBooks; i++){
+        if(strcmp((book+i)->type_book, search_type) == 0){
+            count++;
+        }
+    }
+    return count;
+}
+void printTypeBooks(Book *book, int numberBooks, char search_type[30]){
+    if (numberBooks != 0) 
+    {
+    fflush(stdin);
+    printf("\nEnter type of book which you want to search: ");
+    gets(search_type);
+    int result = countBooks_Type(book, numberBooks, search_type);
+    printf("\nThe type of book you want to search have %d books", result);
+    } else {
+        printf("\nPlease input data.");
+    }
+};
+void editBook(Book *book, int numberBooks, char id_edit[30]){
+    bool has_book = false;
+    fflush(stdin);
+    printf("\nEnter id which you want to edit: ");
+    gets(id_edit);
+    for (int index = 0; index < numberBooks; index++)
+    {
+        if (strcmp(id_edit,(book + index)->id_book) == 0)
+        {
+            printf("\n======== EDIT BOOK ========");
             fflush(stdin);
-            printf("Your choise: ");
-            choice_student = getch();
-            switch (choice_student){
-                case 49: 
-                {
-                    printBooks(book, numberBooks);
-                    break;
-                }
-                case 50: 
-                {
-                    searchAuthor(search);
-                    printBooks(findBooksbyAuthor(book, numberBooks,totalBooks,search), countBooksByAuthor(book,numberBooks,search));
-                    break;
-                }
-                case 51:
-                {
-                    int choice_arr;
-                        printf("1.Arrange book according to year.\n");
-                        printf("2.Arrange book according to letter (A->Z).\n");
-                        printf("-------------------------------------------------\n");
-                        printf("Your choise: ");
-                        scanf("%d", &choice_arr);
-                        if(choice_arr == 1){
-                            arrangeBookByYear(book, numberBooks);
-                            printBooks(book, numberBooks);
-                        } else if (choice_arr == 2){
-                            arrangeBookByLetter(book,numberBooks); 
-                            printBooks(book, numberBooks);
-                        }    
-                    break;     
-                }
-                default:
-                {
-                    printf("\nChoice is non-valid.\n");
-                }
-            }
-        } while (choice_student != 27);
+            printf("\nName: ");
+            gets((book + index)->name_book);
+            standardInput(book->name_book);
+            printf("\nAuthor's name: ");
+            gets((book + index)->name_author);
+            standardInput(book->name_author);
+            printf("\nType: ");
+            gets((book + index)->type_book);
+            standardInput(book->type_book);
+            printf("\nYear published: ");
+            scanf("%d", &(book + index)->year_published);
+            has_book = true;
+        }
+    }
+    if (has_book)
+    {
+        printf("Done!\n");
+    }
+    else
+    {
+        printf("Not done !\n");
+    }
 }
